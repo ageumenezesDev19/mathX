@@ -49,14 +49,15 @@ class MainController extends Controller
         for ($index = 1; $index <= $numberExercises; $index++) {
             $operation = $operations[array_rand($operations)];
             $number1 = rand($min, $max);
+            $number2 = rand($min, $max);
 
-            // Garante que number2 nunca seja zero
-            do {
-                $number2 = rand($min, $max);
-            } while ($operation === 'division' && $number2 == 0);
-
-            $exercise = '';
-            $solution = '';
+            // Ajusta para divisão e subtração
+            if ($operation === 'division') {
+                $number2 = $number2 === 0 ? 1 : $number2; // Garante que nunca seja zero
+                $number1 = rand($min, $max);
+            } elseif ($operation === 'subtraction' && $number1 < $number2) {
+                [$number1, $number2] = [$number2, $number1]; // Inverte para evitar números negativos
+            }
 
             switch ($operation) {
                 case 'sum':
@@ -68,19 +69,23 @@ class MainController extends Controller
                     $solution = $number1 - $number2;
                     break;
                 case 'multiplication':
-                    $exercise = "$number1 * $number2 = ";
+                    $exercise = "$number1 × $number2 = ";
                     $solution = $number1 * $number2;
                     break;
                 case 'division':
-                    $exercise = "$number1 / $number2 = ";
-                    $solution = round($number1 / $number2, 2);
+                    $exercise = "$number1 ÷ $number2 = ";
+                    $solution = $number1 / $number2;
+
+                    // Trunca para 2 casas decimais sem arredondar
+                    $solution = floor($solution * 100) / 100;
                     break;
             }
 
             $exercises[] = [
+                'operation' => $operation,
                 'exercise_number' => $index,
                 'exercise' => $exercise,
-                'solution' => "$exercise $solution",
+                'solution' => $solution,
             ];
         }
 
