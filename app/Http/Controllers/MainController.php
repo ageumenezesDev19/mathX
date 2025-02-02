@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
 
 class MainController extends Controller
 {
@@ -14,7 +13,7 @@ class MainController extends Controller
         return view('home');
     }
 
-    public function generateExercises(Request $request): JsonResponse
+    public function generateExercises(Request $request): View
     {
         $request->validate([
             'check_sum' => 'required_without_all:check_subtraction,check_multiplication,check_division',
@@ -89,7 +88,7 @@ class MainController extends Controller
             ];
         }
 
-        return response()->json($exercises);
+        return view('operations', ['exercises' => $exercises]);
     }
 
     public function printExercises(): Response
