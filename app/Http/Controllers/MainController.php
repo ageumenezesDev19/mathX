@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class MainController extends Controller
@@ -26,12 +25,12 @@ class MainController extends Controller
         ]);
 
         // Filtra apenas operações selecionadas
-        $operations = array_filter([
-            $request->check_sum ? 'sum' : null,
-            $request->check_subtraction ? 'subtraction' : null,
-            $request->check_multiplication ? 'multiplication' : null,
-            $request->check_division ? 'division' : null,
-        ]);
+        $operations = collect([
+            'sum' => $request->check_sum,
+            'subtraction' => $request->check_subtraction,
+            'multiplication' => $request->check_multiplication,
+            'division' => $request->check_division,
+        ])->filter()->keys()->toArray();
 
         // Se nenhuma operação for selecionada, retorna um erro
         if (empty($operations)) {
@@ -61,7 +60,7 @@ class MainController extends Controller
 
     public function printExercises()
     {
-        if(!session()->has('exercises')) {
+        if (!session()->has('exercises')) {
             return redirect()->route('home');
         }
 
@@ -71,21 +70,42 @@ class MainController extends Controller
         echo '<h1>Exercícios de Matemática (' . env('APP_NAME') . ')</h1>';
         echo '<hr>';
 
-        foreach($exercises as $exercise) {
-            echo '<h2><small>' . str_pad($exercise['exercise_number'], 2, "0", STR_PAD_LEFT) . ' >> </small> ' . $exercise['exercise'] . '</h2>';
+        foreach ($exercises as $exercise) {
+            echo '<h2><small>' . str_pad($exercise['exercise_number'], 2, "0", STR_PAD_LEFT) . ' > </small> ' . $exercise['exercise'] . '</h2>';
         }
 
         echo '<hr>';
         echo '<small>Soluções:</small><br>';
 
-        foreach($exercises as $exercise) {
-            echo '<small>' . str_pad($exercise['exercise_number'], 2, "0", STR_PAD_LEFT) . ' >> ' . $exercise['solution'] . ' </small><br>' ;
+        foreach ($exercises as $exercise) {
+            echo '<small>' . str_pad($exercise['exercise_number'], 2, "0", STR_PAD_LEFT) . ' > ' . $exercise['exercise'] . $exercise['solution'] . '</small><br>';
         }
     }
 
-    public function exportExercises(): Response
+    public function exportExercises()
     {
-        return response('Export exercises to a text file');
+        if (!session()->has('exercises')) {
+            return redirect()->route('home');
+        }
+
+        $exercises = session('exercises');
+
+        $filename = 'exercises_' . env('APP_NAME') . '_' . date('YmdHis') . '.txt';
+
+        $content = 'Exercícios de Matemática (' . env('APP_NAME') . ')' . "\n\n";
+        foreach ($exercises as $exercise) {
+            $content .= "{$exercise['exercise_number']} > {$exercise['exercise']}\n";
+        }
+
+        $content .= "\n";
+        $content .= "\nSoluções\n" . str_repeat('-', 20) . "\n";
+        foreach ($exercises as $exercise) {
+            $content .= "{$exercise['exercise_number']} > {$exercise['exercise']}{$exercise['solution']}\n";
+        }
+
+        return response($content)
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     private function generateExercise($index, $operations, $min, $max): array
