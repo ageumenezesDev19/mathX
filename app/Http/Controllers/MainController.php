@@ -46,47 +46,15 @@ class MainController extends Controller
         $exercises = [];
 
         for ($index = 1; $index <= $numberExercises; $index++) {
-            $operation = $operations[array_rand($operations)];
-            $number1 = rand($min, $max);
-            $number2 = rand($min, $max);
-
-            // Ajusta para divisão e subtração
-            if ($operation === 'division') {
-                $number2 = $number2 === 0 ? 1 : $number2; // Garante que nunca seja zero
-                $number1 = rand($min, $max);
-            } elseif ($operation === 'subtraction' && $number1 < $number2) {
-                [$number1, $number2] = [$number2, $number1]; // Inverte para evitar números negativos
-            }
-
-            switch ($operation) {
-                case 'sum':
-                    $exercise = "$number1 + $number2 = ";
-                    $solution = $number1 + $number2;
-                    break;
-                case 'subtraction':
-                    $exercise = "$number1 - $number2 = ";
-                    $solution = $number1 - $number2;
-                    break;
-                case 'multiplication':
-                    $exercise = "$number1 × $number2 = ";
-                    $solution = $number1 * $number2;
-                    break;
-                case 'division':
-                    $exercise = "$number1 ÷ $number2 = ";
-                    $solution = $number1 / $number2;
-
-                    // Trunca para 2 casas decimais sem arredondar
-                    $solution = floor($solution * 100) / 100;
-                    break;
-            }
-
-            $exercises[] = [
-                'operation' => $operation,
-                'exercise_number' => $index,
-                'exercise' => $exercise,
-                'solution' => $solution,
-            ];
+            $exercises[] = $this->generateExercise(
+                $index,
+                $operations,
+                $min,
+                $max
+            );
         }
+
+        $request->session()->put('exercises', $exercises);
 
         return view('operations', ['exercises' => $exercises]);
     }
@@ -99,5 +67,49 @@ class MainController extends Controller
     public function exportExercises(): Response
     {
         return response('Export exercises to a text file');
+    }
+
+    private function generateExercise($index, $operations, $min, $max): array
+    {
+        $operation = $operations[array_rand($operations)];
+        $number1 = rand($min, $max);
+        $number2 = rand($min, $max);
+
+        // Ajusta para divisão e subtração
+        if ($operation === 'division') {
+            $number2 = $number2 === 0 ? 1 : $number2; // Garante que nunca seja zero
+            $number1 = rand($min, $max);
+        } elseif ($operation === 'subtraction' && $number1 < $number2) {
+            [$number1, $number2] = [$number2, $number1]; // Inverte para evitar números negativos
+        }
+
+        switch ($operation) {
+            case 'sum':
+                $exercise = "$number1 + $number2 = ";
+                $solution = $number1 + $number2;
+                break;
+            case 'subtraction':
+                $exercise = "$number1 - $number2 = ";
+                $solution = $number1 - $number2;
+                break;
+            case 'multiplication':
+                $exercise = "$number1 × $number2 = ";
+                $solution = $number1 * $number2;
+                break;
+            case 'division':
+                $exercise = "$number1 ÷ $number2 = ";
+                $solution = $number1 / $number2;
+
+                // Trunca para 2 casas decimais sem arredondar
+                $solution = floor($solution * 100) / 100;
+                break;
+        }
+
+        return [
+            'operation' => $operation,
+            'exercise_number' => $index,
+            'exercise' => $exercise,
+            'solution' => $solution,
+        ];
     }
 }
